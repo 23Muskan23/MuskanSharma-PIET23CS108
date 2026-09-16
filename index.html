@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AV Room Desk — gear lending, availability and returns</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14181C;
+  --ink-2:#4A545D;
+  --ink-3:#7C8792;
+  --paper:#FAFAF7;
+  --shelf:#EFF1ED;
+  --edge:#DCE0DA;
+  --card:#FFFFFF;
+  --teal:#0F5C63;
+  --teal-soft:#E3F0F0;
+  --free:#1F7A5A;
+  --free-soft:#E3F2EB;
+  --warn:#B4700A;
+  --warn-soft:#FBF0DC;
+  --late:#B8332B;
+  --late-soft:#FBE7E4;
+  --focus:#0F5C63;
+  --radius:10px;
+  --shadow:0 1px 0 var(--edge);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#ECEFEA; --ink-2:#AEB7B6; --ink-3:#7E8887;
+    --paper:#101416; --shelf:#171C1F; --edge:#2A3236; --card:#161B1E;
+    --teal:#5FD2C8; --teal-soft:#123034;
+    --free:#5BC28F; --free-soft:#12291F;
+    --warn:#E0A63C; --warn-soft:#2B2213;
+    --late:#F0796C; --late-soft:#2E1A18;
+  }
+  :root:not([data-theme="light"]) .btn{color:#0B1113}
+}
+:root[data-theme="dark"]{
+  --ink:#ECEFEA; --ink-2:#AEB7B6; --ink-3:#7E8887;
+  --paper:#101416; --shelf:#171C1F; --edge:#2A3236; --card:#161B1E;
+  --teal:#5FD2C8; --teal-soft:#123034;
+  --free:#5BC28F; --free-soft:#12291F;
+  --warn:#E0A63C; --warn-soft:#2B2213;
+  --late:#F0796C; --late-soft:#2E1A18;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{margin:0;font-weight:600;letter-spacing:-0.015em}
+h1{font-size:1.6rem}
+h2{font-size:1.15rem}
+h3{font-size:.95rem}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+code,.code{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82em;letter-spacing:.01em}
+.num{font-variant-numeric:tabular-nums}
+a{color:var(--teal)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.rail{
+  background:var(--shelf);border-right:1px solid var(--edge);
+  padding:22px 14px;position:sticky;top:0;height:100vh;overflow:auto;
+}
+.brand{display:flex;gap:10px;align-items:flex-start;padding:0 8px 18px}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--late);margin-top:6px;flex:none}
+.brand b{display:block;font-weight:600;line-height:1.25}
+.brand span{display:block;color:var(--ink-3);font-size:.78rem}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  width:100%;text-align:left;background:none;border:0;padding:9px 10px;
+  border-radius:8px;cursor:pointer;color:var(--ink-2);font-weight:500;
+}
+.nav button:hover{background:var(--card)}
+.nav button[aria-current="true"]{background:var(--card);color:var(--ink);box-shadow:inset 2px 0 0 var(--teal)}
+.nav .tag{font-size:.72rem;font-weight:600;padding:1px 6px;border-radius:20px;background:var(--late-soft);color:var(--late)}
+.rail-foot{margin-top:22px;padding:0 10px;border-top:1px solid var(--edge);padding-top:14px}
+.rail-foot button{background:none;border:0;color:var(--ink-3);cursor:pointer;padding:4px 0;display:block;font-size:.82rem}
+.rail-foot button:hover{color:var(--ink)}
+main{padding:30px 34px 80px;max-width:1080px}
+.head{margin-bottom:22px}
+.head p{color:var(--ink-2);margin-top:6px;max-width:62ch}
+
+/* ---------- answer bar (hero) ---------- */
+.answer{
+  background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);
+  padding:20px 22px;margin-bottom:22px;
+}
+.q-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:.78rem;color:var(--ink-3);font-weight:500}
+.field input,.field select,.field textarea{
+  background:var(--paper);border:1px solid var(--edge);border-radius:8px;
+  padding:9px 10px;min-width:150px;
+}
+.field textarea{min-height:70px;resize:vertical;width:100%}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{
+  background:var(--shelf);border:1px solid var(--edge);border-radius:20px;
+  padding:5px 11px;font-size:.82rem;cursor:pointer;color:var(--ink-2);
+}
+.chip:hover{border-color:var(--teal);color:var(--teal)}
+.verdict{
+  margin-top:18px;padding-top:18px;border-top:1px dashed var(--edge);
+  font-size:1.35rem;font-weight:600;letter-spacing:-0.02em;line-height:1.35;
+}
+.verdict small{display:block;font-size:.88rem;font-weight:400;color:var(--ink-2);margin-top:8px;letter-spacing:0}
+.verdict .g{color:var(--free)}
+.verdict .r{color:var(--late)}
+.verdict .a{color:var(--warn)}
+
+/* ---------- shelves ---------- */
+.shelf-row{
+  display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start;
+  background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);
+  padding:16px 18px;margin-bottom:10px;
+}
+.shelf-row h3{display:flex;align-items:center;gap:9px}
+.meta{color:var(--ink-3);font-size:.82rem;margin-top:4px}
+.units{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+.unit{
+  border:1px solid var(--edge);border-radius:6px;padding:4px 8px;
+  display:inline-flex;align-items:center;gap:6px;background:var(--paper);
+}
+.unit .led{width:7px;height:7px;border-radius:50%}
+.unit.free{border-color:var(--free);background:var(--free-soft)}
+.unit.free .led{background:var(--free)}
+.unit.out{border-color:var(--warn);background:var(--warn-soft)}
+.unit.out .led{background:var(--warn)}
+.unit.late{border-color:var(--late);background:var(--late-soft)}
+.unit.late .led{background:var(--late)}
+.unit.held{border-color:var(--teal);background:var(--teal-soft)}
+.unit.held .led{background:var(--teal)}
+.count{text-align:right;white-space:nowrap}
+.count b{font-size:2rem;font-weight:600;line-height:1;letter-spacing:-0.03em}
+.count span{display:block;font-size:.78rem;color:var(--ink-3);margin-top:4px}
+
+/* ---------- generic ---------- */
+.btn{
+  background:var(--teal);color:#fff;border:0;border-radius:8px;
+  padding:10px 15px;font-weight:600;cursor:pointer;
+}
+:root[data-theme="dark"] .btn{color:#0B1113}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:none;color:var(--ink-2);border:1px solid var(--edge)}
+.btn.ghost:hover{border-color:var(--teal);color:var(--teal);filter:none}
+.btn.danger{background:var(--late);color:#fff}
+.btn.sm{padding:6px 11px;font-size:.84rem;border-radius:7px}
+.btn:disabled{opacity:.45;cursor:not-allowed;filter:none}
+.card{background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.rows{display:flex;flex-direction:column;gap:8px}
+.line{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--edge)}
+.line:last-child{border-bottom:0}
+.pill{font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:20px}
+.pill.free{background:var(--free-soft);color:var(--free)}
+.pill.out{background:var(--warn-soft);color:var(--warn)}
+.pill.late{background:var(--late-soft);color:var(--late)}
+.pill.held{background:var(--teal-soft);color:var(--teal)}
+.empty{color:var(--ink-3);padding:26px 0;text-align:center}
+.empty b{display:block;color:var(--ink-2);font-weight:600;margin-bottom:4px}
+.note{background:var(--shelf);border-left:3px solid var(--teal);padding:11px 13px;border-radius:0 8px 8px 0;font-size:.88rem;color:var(--ink-2)}
+.note.bad{border-left-color:var(--late);background:var(--late-soft);color:var(--late)}
+.note.ok{border-left-color:var(--free);background:var(--free-soft);color:var(--free)}
+.stat{background:var(--card);border:1px solid var(--edge);border-radius:var(--radius);padding:15px 17px}
+.stat b{display:block;font-size:1.9rem;font-weight:600;letter-spacing:-0.03em;line-height:1.1}
+.stat span{color:var(--ink-3);font-size:.82rem}
+.sec-title{margin:26px 0 10px;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.sec-title span{color:var(--ink-3);font-size:.82rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-weight:500;color:var(--ink-3);font-size:.8rem;padding:8px 10px;border-bottom:1px solid var(--edge)}
+td{padding:10px;border-bottom:1px solid var(--edge);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.wrap{overflow-x:auto}
+
+/* ---------- modal + toast ---------- */
+.veil{position:fixed;inset:0;background:rgba(10,14,16,.5);display:grid;place-items:center;padding:20px;z-index:50}
+.modal{background:var(--card);border-radius:12px;border:1px solid var(--edge);max-width:520px;width:100%;max-height:88vh;overflow:auto;padding:24px}
+.modal h2{margin-bottom:6px}
+.receipt{margin:16px 0;border-top:1px solid var(--edge);border-bottom:1px solid var(--edge);padding:6px 0}
+.receipt div{display:flex;justify-content:space-between;padding:7px 0;font-size:.92rem}
+.receipt div.total{border-top:1px dashed var(--edge);margin-top:4px;padding-top:11px;font-weight:600;font-size:1.05rem}
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:9px;
+  z-index:80;font-size:.9rem;box-shadow:0 6px 24px rgba(0,0,0,.2);
+}
+.timeline{display:flex;height:8px;border-radius:5px;overflow:hidden;background:var(--shelf);margin-top:9px}
+.timeline i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--ink-3);font-size:.78rem;margin-top:10px}
+.legend s{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;text-decoration:none}
+
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--edge);padding:14px}
+  .brand{padding-bottom:12px}
+  .nav{flex-direction:row;overflow-x:auto;gap:4px}
+  .nav button{white-space:nowrap;padding:8px 12px}
+  .nav button[aria-current="true"]{box-shadow:inset 0 -2px 0 var(--teal)}
+  .rail-foot{display:flex;gap:16px;margin-top:12px;padding-top:10px}
+  main{padding:20px 16px 60px}
+  .shelf-row{grid-template-columns:1fr}
+  .count{text-align:left;display:flex;align-items:baseline;gap:8px}
+  .count span{margin-top:0}
+  .verdict{font-size:1.15rem}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail">
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      <span><b>AV Room Desk</b><span id="deskSub">Media Block, Room 14</span></span>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="rail-foot">
+      <button id="themeBtn">Switch to dark</button>
+      <button id="resetBtn">Reset to demo data</button>
+    </div>
+  </aside>
+  <main id="view"></main>
+</div>
+
+<script>
+/* =====================================================================
+   AV Room Desk — a lending desk for college AV equipment.
+   Single file, no build step, no backend. State lives in localStorage.
+   ===================================================================== */
+
+/* ---------- date helpers (all dates are 'YYYY-MM-DD' strings) ---------- */
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const today = () => iso(new Date());
+const addDays = (s,n) => { const d = new Date(s+'T00:00:00'); d.setDate(d.getDate()+n); return iso(d); };
+const diffDays = (a,b) => Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/86400000);
+const pretty = s => new Date(s+'T00:00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+const overlaps = (a1,a2,b1,b2) => a1 <= b2 && b1 <= a2;
+function nextWeekend(){
+  const d = new Date(); const dow = d.getDay();          // 0 Sun .. 6 Sat
+  const toSat = (6 - dow + 7) % 7;
+  const sat = addDays(today(), toSat === 0 ? 0 : toSat);
+  return [sat, addDays(sat,1)];
+}
+
+/* ---------- storage ---------- */
+const KEY = 'avroom.v1';
+let DB;
+
+function seed(){
+  const t = today();
+  const mk = (code,name,category,qty,deposit,fee,maxDays,note) => ({
+    id: code.toLowerCase(), code, name, category, deposit, lateFeePerDay: fee, maxDays, note,
+    units: Array.from({length:qty},(_,i)=>({ code:`${code}-${String(i+1).padStart(2,'0')}`, retired:false }))
+  });
+  const items = [
+    mk('DSLR','Canon EOS 200D kit','Camera',3,2000,50,3,'Body, 18–55 lens, battery, 32 GB card'),
+    mk('PROJ','Epson EB-X06 projector','Projection',2,3000,100,2,'Includes remote and 5 m power cable'),
+    mk('MIC','Shure wireless mic set','Audio',4,1500,40,2,'Handheld + receiver, needs 2 AA'),
+    mk('TRI','Manfrotto tripod','Support',5,500,20,5,'Ball head, quick-release plate'),
+    mk('REC','Zoom H1n field recorder','Audio',2,1800,50,3,'With windscreen'),
+    mk('LED','Godox LED panel','Lighting',3,1200,40,3,'Panel, barn doors, stand'),
+    mk('GIMB','DJI Ronin gimbal','Support',1,4000,120,2,'Single unit — book early'),
+    mk('HDMI','HDMI cable, 10 m','Cables',6,200,10,7,'')
+  ];
+  const loans = [
+    { id:'L1', item:'dslr', unit:'DSLR-01', name:'Ananya Mehra', roll:'21CS044', club:'Photography Club',
+      phone:'98xxxxxx11', purpose:'Fest coverage', out:addDays(t,-6), due:addDays(t,-2), deposit:2000, returned:null },
+    { id:'L2', item:'proj', unit:'PROJ-01', name:'Rahul Verma', roll:'22EC117', club:'Debate Society',
+      phone:'97xxxxxx23', purpose:'Inter-college quiz', out:addDays(t,-1), due:addDays(t,1), deposit:3000, returned:null },
+    { id:'L3', item:'mic', unit:'MIC-01', name:'Rahul Verma', roll:'22EC117', club:'Debate Society',
+      phone:'97xxxxxx23', purpose:'Inter-college quiz', out:addDays(t,-1), due:t, deposit:1500, returned:null }
+  ];
+  const [sat,sun] = nextWeekend();
+  const holds = [
+    { id:'R1', item:'dslr', unit:'DSLR-02', name:'Ishita Rao', roll:'21ME008', club:'Film Club',
+      phone:'96xxxxxx77', purpose:'Short film shoot', from:sat, to:sun, status:'booked' }
+  ];
+  return {
+    items, loans, holds,
+    settings:{ desk:'Media Block, Room 14', currency:'₹', maxItems:2, graceDays:0, defaultDays:2 },
+    log:[{ at:new Date().toISOString(), text:'Register started with demo data' }]
+  };
+}
+function load(){
+  try{ const raw = localStorage.getItem(KEY); DB = raw ? JSON.parse(raw) : seed(); }
+  catch(e){ DB = seed(); }
+  if(!DB || !DB.items) DB = seed();
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(DB)); }
+  catch(e){ toast('Could not save — storage is blocked in this browser'); }
+}
+function logit(text){ DB.log.unshift({ at:new Date().toISOString(), text }); DB.log = DB.log.slice(0,200); }
+
+/* ---------- domain logic ---------- */
+const money = n => DB.settings.currency + Number(n).toLocaleString('en-IN');
+const item = id => DB.items.find(i => i.id === id);
+const activeLoans = () => DB.loans.filter(l => !l.returned);
+const liveHolds = () => DB.holds.filter(h => h.status === 'booked');
+
+// Days a unit is spoken for. An overdue loan has no known end: it blocks its unit
+// until someone physically hands it back, so the desk never promises it to anyone.
+const OPEN_ENDED = '9999-12-31';
+const isOverdue = l => l.due < today();
+function loanBlock(l){ return [l.out, isOverdue(l) ? OPEN_ENDED : l.due]; }
+
+function unitBusy(unitCode, from, to){
+  for(const l of activeLoans()){
+    if(l.unit !== unitCode) continue;
+    const [a,b] = loanBlock(l);
+    if(overlaps(a,b,from,to)) return { kind:'loan', ref:l };
+  }
+  for(const h of liveHolds()){
+    if(h.unit !== unitCode) continue;
+    if(overlaps(h.from,h.to,from,to)) return { kind:'hold', ref:h };
+  }
+  return null;
+}
+function freeUnits(it, from, to){
+  return it.units.filter(u => !u.retired && !unitBusy(u.code, from, to));
+}
+// When does the first unit of this item come free?
+function freeFrom(it, from, to){
+  let best = null;
+  for(const u of it.units){
+    if(u.retired) continue;
+    const busy = unitBusy(u.code, from, to);
+    if(!busy) return from;
+    // An overdue unit has no predictable free date — don't guess one.
+    if(busy.kind === 'loan' && isOverdue(busy.ref)) continue;
+    const end = busy.kind === 'loan' ? busy.ref.due : busy.ref.to;
+    if(!best || end < best) best = end;
+  }
+  return best ? addDays(best,1) : null;
+}
+function unitState(unitCode){
+  const l = activeLoans().find(x => x.unit === unitCode);
+  if(l) return l.due < today() ? 'late' : 'out';
+  const h = liveHolds().find(x => x.unit === unitCode);
+  if(h) return 'held';
+  return 'free';
+}
+function holdingCount(roll){
+  const r = roll.trim().toLowerCase();
+  return activeLoans().filter(l => l.roll.toLowerCase() === r).length
+       + liveHolds().filter(h => h.roll.toLowerCase() === r).length;
+}
+function borrowerHistory(roll){
+  const r = roll.trim().toLowerCase();
+  const done = DB.loans.filter(l => l.roll.toLowerCase() === r && l.returned);
+  const lates = done.filter(l => l.lateDays > 0).length;
+  return { done: done.length, lates };
+}
+function lateDays(l, on){
+  const d = diffDays(l.due, on || today()) - (DB.settings.graceDays || 0);
+  return Math.max(0, d);
+}
+function feeFor(l, on){ return lateDays(l, on) * item(l.item).lateFeePerDay; }
+
+/* checks that stand between a person and a piece of gear */
+function borrowChecks(it, roll, from, to){
+  const problems = [];
+  const free = freeUnits(it, from, to);
+  if(free.length === 0){
+    const when = freeFrom(it, from, to);
+    problems.push(`Every ${it.name} is spoken for then.` + (when ? ` Earliest free day is ${pretty(when)}.` : ''));
+  }
+  if(roll && holdingCount(roll) >= DB.settings.maxItems){
+    problems.push(`${roll.toUpperCase()} already has ${holdingCount(roll)} items out or reserved. The desk limit is ${DB.settings.maxItems}.`);
+  }
+  const already = [...activeLoans(), ...liveHolds()].some(x => x.item === it.id && roll && x.roll.toLowerCase() === roll.trim().toLowerCase());
+  if(already) problems.push(`${roll.toUpperCase()} already has a ${it.name}. One per person at a time.`);
+  const span = diffDays(from, to) + 1;
+  if(span > it.maxDays) problems.push(`${it.name} goes out for ${it.maxDays} day${it.maxDays>1?'s':''} at most — you asked for ${span}.`);
+  if(to < from) problems.push('The return date is before the pickup date.');
+  return { problems, free };
+}
+
+/* ---------- tiny view plumbing ---------- */
+let route = 'desk';
+const el = (h) => { const d = document.createElement('div'); d.innerHTML = h.trim(); return d.firstElementChild; };
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const t = el(`<div class="toast">${msg}</div>`);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+function modal(html){
+  const v = el(`<div class="veil"><div class="modal">${html}</div></div>`);
+  v.addEventListener('click', e => { if(e.target === v) v.remove(); });
+  document.addEventListener('keydown', function esc(e){ if(e.key==='Escape'){ v.remove(); document.removeEventListener('keydown', esc); } });
+  document.body.appendChild(v);
+  return v;
+}
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const TABS = [
+  { id:'desk',    label:'Today at the desk' },
+  { id:'shelf',   label:'Gear shelf' },
+  { id:'issue',   label:'Hand out gear' },
+  { id:'return',  label:'Take it back' },
+  { id:'holds',   label:'Reservations' },
+  { id:'ledger',  label:'Register' },
+  { id:'rules',   label:'Desk rules' }
+];
+
+function paintNav(){
+  const overdue = activeLoans().filter(l => l.due < today()).length;
+  document.getElementById('nav').innerHTML = TABS.map(t => `
+    <button data-go="${t.id}" aria-current="${route===t.id}">
+      <span>${t.label}</span>
+      ${t.id==='return' && overdue ? `<span class="tag num">${overdue}</span>` : ''}
+    </button>`).join('');
+  document.getElementById('deskSub').textContent = DB.settings.desk;
+}
+function go(r){ route = r; render(); window.scrollTo({top:0}); }
+
+function render(){
+  paintNav();
+  const v = document.getElementById('view');
+  v.innerHTML = ({ desk:viewDesk, shelf:viewShelf, issue:viewIssue, return:viewReturn,
+                   holds:viewHolds, ledger:viewLedger, rules:viewRules })[route]();
+  wire();
+  save();
+}
+
+/* =====================================================================
+   1. Today at the desk — the question everyone asks, answered up front
+   ===================================================================== */
+let q = { item:'dslr', from:null, to:null };
+
+function viewDesk(){
+  if(!q.from){ const [s,e] = nextWeekend(); q.from = s; q.to = e; }
+  const it = item(q.item) || DB.items[0];
+  const free = freeUnits(it, q.from, q.to);
+  const total = it.units.filter(u => !u.retired).length;
+  const when = free.length ? null : freeFrom(it, q.from, q.to);
+  const sameDay = q.from === q.to;
+
+  let verdict;
+  if(free.length){
+    verdict = `<span class="g">Yes — ${free.length} of ${total} free</span>
+      <small>Units ready: ${free.map(u=>`<span class="code">${u.code}</span>`).join(', ')}.
+      Deposit ${money(it.deposit)}, late fee ${money(it.lateFeePerDay)} a day after the due date.</small>`;
+  } else {
+    verdict = `<span class="r">No — all ${total} are taken</span>
+      <small>${when ? `Next free day is ${pretty(when)}.` : 'No free date can be promised until the overdue units come back.'}
+      ${busyBecause(it, q.from, q.to)}</small>`;
+  }
+
+  const out = activeLoans();
+  const overdue = out.filter(l => l.due < today()).sort((a,b)=>a.due.localeCompare(b.due));
+  const dueSoon = out.filter(l => l.due >= today() && l.due <= addDays(today(),1));
+  const freeNow = DB.items.reduce((n,i)=> n + freeUnits(i, today(), today()).length, 0);
+  const atRisk = overdue.reduce((n,l)=> n + feeFor(l), 0);
+
+  return `
+  <div class="head">
+    <h1>Today at the desk</h1>
+    <p>Answer the walk-up question first, then chase what hasn't come back.</p>
+  </div>
+
+  <section class="answer">
+    <div class="q-row">
+      <div class="field">
+        <label for="qItem">Is this free…</label>
+        <select id="qItem">${DB.items.map(i=>`<option value="${i.id}" ${i.id===it.id?'selected':''}>${esc(i.name)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label for="qFrom">from</label><input type="date" id="qFrom" value="${q.from}"></div>
+      <div class="field"><label for="qTo">until</label><input type="date" id="qTo" value="${q.to}"></div>
+      <button class="btn" data-go="issue">Hand it out</button>
+    </div>
+    <div class="chips">
+      <button class="chip" data-range="today">Today</button>
+      <button class="chip" data-range="tom">Tomorrow</button>
+      <button class="chip" data-range="weekend">This weekend</button>
+      <button class="chip" data-range="week">Next 7 days</button>
+    </div>
+    <div class="verdict">${verdict}</div>
+    ${sameDay?'':`<div class="legend">${it.units.filter(u=>!u.retired).map(u=>{
+      const s = unitBusy(u.code,q.from,q.to) ? 'late' : 'free';
+      return `<span><s style="background:var(--${s==='free'?'free':'late'})"></s><span class="code">${u.code}</span></span>`;
+    }).join('')}</div>`}
+  </section>
+
+  <div class="grid2">
+    <div class="stat"><b class="num">${out.length}</b><span>items out right now</span></div>
+    <div class="stat"><b class="num" style="color:var(--late)">${overdue.length}</b><span>overdue</span></div>
+    <div class="stat"><b class="num">${freeNow}</b><span>units free today</span></div>
+    <div class="stat"><b class="num">${money(atRisk)}</b><span>late fees running</span></div>
+  </div>
+
+  <div class="sec-title"><h2>Not back yet</h2><span>oldest first</span></div>
+  <div class="card">
+    ${overdue.length ? `<div class="rows">${overdue.map(l=>{
+      const d = lateDays(l);
+      return `<div class="line">
+        <div>
+          <b>${esc(l.name)}</b> <span class="code">${esc(l.roll)}</span>
+          <div class="meta">${esc(item(l.item).name)} · <span class="code">${l.unit}</span> · due ${pretty(l.due)} · ${d} day${d>1?'s':''} late · fee ${money(feeFor(l))}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost sm" data-nudge="${l.id}">Write a nudge</button>
+          <button class="btn sm" data-take="${l.id}">Take back</button>
+        </div>
+      </div>`;
+    }).join('')}</div>` : `<div class="empty"><b>Nothing is overdue.</b>The register is clean as of ${pretty(today())}.</div>`}
+  </div>
+
+  <div class="sec-title"><h2>Due today or tomorrow</h2></div>
+  <div class="card">
+    ${dueSoon.length ? `<div class="rows">${dueSoon.map(l=>`
+      <div class="line">
+        <div><b>${esc(l.name)}</b> <span class="code">${esc(l.roll)}</span>
+        <div class="meta">${esc(item(l.item).name)} · <span class="code">${l.unit}</span> · due ${pretty(l.due)}</div></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn ghost sm" data-nudge="${l.id}">Remind</button>
+          <button class="btn sm" data-take="${l.id}">Take back</button>
+        </div>
+      </div>`).join('')}</div>` : `<div class="empty"><b>Quiet stretch.</b>Nothing falls due in the next day.</div>`}
+  </div>`;
+}
+
+function busyBecause(it, from, to){
+  const who = it.units.map(u => unitBusy(u.code, from, to)).filter(Boolean).map(b =>
+    b.kind === 'loan'
+      ? (isOverdue(b.ref) ? `${b.ref.name}, overdue since ${pretty(b.ref.due)}` : `${b.ref.name} until ${pretty(b.ref.due)}`)
+      : `${b.ref.name} has it booked`);
+  return who.length ? 'Held by ' + who.slice(0,3).join('; ') + '.' : '';
+}
+
+/* =====================================================================
+   2. Gear shelf
+   ===================================================================== */
+function viewShelf(){
+  const t = today();
+  return `
+  <div class="head">
+    <h1>Gear shelf</h1>
+    <p>Every unit the room owns, and what it is doing right now. Tags are what you write on the case.</p>
+  </div>
+  <div class="legend">
+    <span><s style="background:var(--free)"></s>free</span>
+    <span><s style="background:var(--warn)"></s>out on loan</span>
+    <span><s style="background:var(--late)"></s>overdue</span>
+    <span><s style="background:var(--teal)"></s>reserved</span>
+  </div>
+  <div style="margin-top:14px">
+  ${DB.items.map(it=>{
+    const units = it.units.filter(u=>!u.retired);
+    const free = units.filter(u => unitState(u.code)==='free').length;
+    return `<div class="shelf-row">
+      <div>
+        <h3>${esc(it.name)} <span class="pill ${free?'free':'late'}">${free?'available':'all out'}</span></h3>
+        <div class="meta">${esc(it.category)} · deposit ${money(it.deposit)} · ${money(it.lateFeePerDay)}/day late · up to ${it.maxDays} day${it.maxDays>1?'s':''}${it.note?' · '+esc(it.note):''}</div>
+        <div class="units">${units.map(u=>{
+          const s = unitState(u.code);
+          const l = activeLoans().find(x=>x.unit===u.code);
+          const h = liveHolds().find(x=>x.unit===u.code);
+          const tip = l ? `${l.name} · due ${pretty(l.due)}` : h ? `${h.name} · ${pretty(h.from)}–${pretty(h.to)}` : 'on the shelf';
+          return `<span class="unit ${s}" title="${esc(tip)}"><i class="led"></i><span class="code">${u.code}</span></span>`;
+        }).join('')}</div>
+      </div>
+      <div class="count"><b class="num">${free}<span style="font-size:.9rem;color:var(--ink-3)">/${units.length}</span></b><span>free today</span></div>
+    </div>`;
+  }).join('')}
+  </div>`;
+}
+
+/* =====================================================================
+   3. Hand out gear
+   ===================================================================== */
+let form = { item:'dslr', name:'', roll:'', club:'', phone:'', purpose:'', from:null, days:null, unit:'' };
+
+function viewIssue(){
+  const it = item(form.item) || DB.items[0];
+  form.from = form.from || today();
+  const days = form.days || Math.min(DB.settings.defaultDays, it.maxDays);
+  const due = addDays(form.from, days - 1);
+  const { problems, free } = borrowChecks(it, form.roll, form.from, due);
+  const hist = form.roll ? borrowerHistory(form.roll) : null;
+  const ok = problems.length === 0 && form.name.trim() && form.roll.trim();
+
+  return `
+  <div class="head">
+    <h1>Hand out gear</h1>
+    <p>The desk checks availability, the per-person limit and the loan length before anything leaves the room.</p>
+  </div>
+  <div class="card">
+    <div class="grid2">
+      <div class="field"><label for="fItem">Item</label>
+        <select id="fItem">${DB.items.map(i=>`<option value="${i.id}" ${i.id===it.id?'selected':''}>${esc(i.name)}</option>`).join('')}</select></div>
+      <div class="field"><label for="fFrom">Pick-up date</label><input type="date" id="fFrom" value="${form.from}"></div>
+      <div class="field"><label for="fDays">Days out (max ${it.maxDays})</label>
+        <input type="number" id="fDays" min="1" max="${it.maxDays}" value="${days}"></div>
+      <div class="field"><label for="fUnit">Unit</label>
+        <select id="fUnit">${free.length ? free.map(u=>`<option ${u.code===form.unit?'selected':''}>${u.code}</option>`).join('') : '<option>—</option>'}</select></div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div class="field"><label for="fName">Borrower</label><input id="fName" value="${esc(form.name)}" placeholder="Full name"></div>
+      <div class="field"><label for="fRoll">Roll number</label><input id="fRoll" value="${esc(form.roll)}" placeholder="21CS044"></div>
+      <div class="field"><label for="fClub">Club or department</label><input id="fClub" value="${esc(form.club)}" placeholder="Photography Club"></div>
+      <div class="field"><label for="fPhone">Phone</label><input id="fPhone" value="${esc(form.phone)}" placeholder="For the return reminder"></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label for="fPurpose">What it's for</label>
+      <input id="fPurpose" value="${esc(form.purpose)}" placeholder="Annual day rehearsal"></div>
+
+    <div class="sec-title"><h2>Before it leaves the room</h2></div>
+    ${problems.length ? problems.map(p=>`<div class="note bad" style="margin-bottom:8px">${esc(p)}</div>`).join('')
+      : `<div class="note ok">Clear to go out. Due back ${pretty(due)}.</div>`}
+    ${hist && hist.done ? `<div class="note" style="margin-top:8px">${esc(form.roll.toUpperCase())} has borrowed ${hist.done} time${hist.done>1?'s':''} before${hist.lates?`, returning late on ${hist.lates} of them` : ' and always returned on time'}.</div>` : ''}
+
+    <div class="receipt">
+      <div><span>Due back</span><b>${pretty(due)}</b></div>
+      <div><span>Refundable deposit</span><b>${money(it.deposit)}</b></div>
+      <div><span>Late fee after that</span><b>${money(it.lateFeePerDay)} per day</b></div>
+      <div><span>Items this person will hold</span><b>${(form.roll?holdingCount(form.roll):0)+1} of ${DB.settings.maxItems}</b></div>
+    </div>
+    <button class="btn" id="doIssue" ${ok?'':'disabled'}>Hand out and collect deposit</button>
+    <button class="btn ghost" id="doHold" ${problems.length||!form.name.trim()||!form.roll.trim()?'disabled':''}>Reserve for later instead</button>
+  </div>`;
+}
+
+function doIssue(hold){
+  const it = item(form.item);
+  const days = form.days || Math.min(DB.settings.defaultDays, it.maxDays);
+  const due = addDays(form.from, days - 1);
+  const { problems, free } = borrowChecks(it, form.roll, form.from, due);
+  if(problems.length) return toast(problems[0]);
+  const unit = free.find(u=>u.code===form.unit)?.code || free[0].code;
+  const base = { item:it.id, unit, name:form.name.trim(), roll:form.roll.trim().toUpperCase(),
+                 club:form.club.trim(), phone:form.phone.trim(), purpose:form.purpose.trim() };
+  if(hold){
+    DB.holds.push({ id:'R'+Date.now(), ...base, from:form.from, to:due, status:'booked' });
+    logit(`${base.name} reserved ${unit} for ${pretty(form.from)}–${pretty(due)}`);
+    toast(`${unit} reserved for ${base.name}`);
+  } else {
+    DB.loans.push({ id:'L'+Date.now(), ...base, out:form.from, due, deposit:it.deposit, returned:null });
+    logit(`${unit} handed to ${base.name} (${base.roll}), due ${pretty(due)}, deposit ${money(it.deposit)}`);
+    toast(`${unit} handed out. Due ${pretty(due)}.`);
+  }
+  form = { item:form.item, name:'', roll:'', club:'', phone:'', purpose:'', from:today(), days:null, unit:'' };
+  go(hold ? 'holds' : 'desk');
+}
+
+/* =====================================================================
+   4. Take it back — the deposit maths, done for you
+   ===================================================================== */
+function viewReturn(){
+  const out = activeLoans().sort((a,b)=>a.due.localeCompare(b.due));
+  return `
+  <div class="head">
+    <h1>Take it back</h1>
+    <p>Check the unit off, and the desk works out the late fee and what goes back to the borrower.</p>
+  </div>
+  <div class="card">
+    ${out.length ? `<div class="wrap"><table>
+      <thead><tr><th>Unit</th><th>Borrower</th><th>Due</th><th>Standing</th><th>Deposit back</th><th></th></tr></thead>
+      <tbody>${out.map(l=>{
+        const d = lateDays(l), f = feeFor(l);
+        const state = d>0 ? 'late' : (l.due===today() ? 'out' : 'free');
+        return `<tr>
+          <td><span class="code">${l.unit}</span><div class="meta">${esc(item(l.item).name)}</div></td>
+          <td>${esc(l.name)}<div class="meta">${esc(l.roll)}${l.club?' · '+esc(l.club):''}</div></td>
+          <td class="num">${pretty(l.due)}</td>
+          <td><span class="pill ${state}">${d>0?`${d} day${d>1?'s':''} late`:(l.due===today()?'due today':'in time')}</span></td>
+          <td class="num">${money(Math.max(0,l.deposit-f))}${f?`<div class="meta">less ${money(f)} fee</div>`:''}</td>
+          <td><button class="btn sm" data-take="${l.id}">Take back</button></td>
+        </tr>`;
+      }).join('')}</tbody></table></div>`
+      : `<div class="empty"><b>Every unit is on the shelf.</b>Nothing is out on loan right now.</div>`}
+  </div>`;
+}
+
+function takeBack(id){
+  const l = DB.loans.find(x=>x.id===id); if(!l) return;
+  const it = item(l.item), d = lateDays(l), fee = feeFor(l), back = Math.max(0, l.deposit - fee);
+  const v = modal(`
+    <h2>Return ${l.unit}</h2>
+    <p class="meta">${esc(it.name)} · ${esc(l.name)} (${esc(l.roll)})</p>
+    <div class="field" style="margin-top:14px"><label for="cond">Condition on return</label>
+      <select id="cond"><option>Fine, back on the shelf</option><option>Minor issue, still usable</option><option>Damaged — hold for repair</option></select></div>
+    <div class="field" style="margin-top:10px"><label for="rnote">Note for the register</label>
+      <textarea id="rnote" placeholder="Lens cap missing, battery flat…"></textarea></div>
+    <div class="receipt">
+      <div><span>Out on</span><b>${pretty(l.out)}</b></div>
+      <div><span>Due back</span><b>${pretty(l.due)}</b></div>
+      <div><span>Returned</span><b>${pretty(today())}</b></div>
+      <div><span>Days late</span><b class="num">${d}</b></div>
+      <div><span>Deposit held</span><b class="num">${money(l.deposit)}</b></div>
+      <div><span>Late fee (${d} × ${money(it.lateFeePerDay)})</span><b class="num" style="color:${fee?'var(--late)':'inherit'}">− ${money(fee)}</b></div>
+      <div class="total"><span>Hand back to borrower</span><b class="num">${money(back)}</b></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn" id="confirmReturn">Confirm return and refund</button>
+      <button class="btn ghost" data-close>Cancel</button>
+    </div>`);
+  v.querySelector('#confirmReturn').onclick = () => {
+    l.returned = today(); l.lateDays = d; l.fee = fee; l.refund = back;
+    l.condition = v.querySelector('#cond').value; l.note = v.querySelector('#rnote').value.trim();
+    logit(`${l.unit} returned by ${l.name}${d?` — ${d} day(s) late, fee ${money(fee)}`:' on time'}, refunded ${money(back)}`);
+    v.remove(); toast(`${l.unit} back on the shelf. ${money(back)} refunded.`); render();
+  };
+  v.querySelector('[data-close]').onclick = () => v.remove();
+}
+
+/* =====================================================================
+   5. Reservations — so two clubs can't claim one projector
+   ===================================================================== */
+function viewHolds(){
+  const hs = liveHolds().sort((a,b)=>a.from.localeCompare(b.from));
+  return `
+  <div class="head">
+    <h1>Reservations</h1>
+    <p>A booked unit is off the shelf for those dates, so nobody promises the same projector twice.</p>
+  </div>
+  <div class="card">
+    ${hs.length ? `<div class="rows">${hs.map(h=>{
+      const starts = diffDays(today(), h.from);
+      return `<div class="line">
+        <div><b>${esc(item(h.item).name)}</b> <span class="code">${h.unit}</span>
+          <div class="meta">${esc(h.name)} (${esc(h.roll)})${h.club?' · '+esc(h.club):''} · ${pretty(h.from)} → ${pretty(h.to)}${h.purpose?' · '+esc(h.purpose):''}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span class="pill ${starts<=0?'out':'held'}">${starts<=0?'ready for pick-up':`in ${starts} day${starts>1?'s':''}`}</span>
+          <button class="btn sm" data-fulfil="${h.id}" ${starts>0?'disabled':''}>Hand out</button>
+          <button class="btn ghost sm" data-drop="${h.id}">Cancel</button>
+        </div>
+      </div>`;
+    }).join('')}</div>` : `<div class="empty"><b>No reservations.</b>Book one from the hand-out screen when someone plans ahead.</div>`}
+  </div>`;
+}
+
+function fulfil(id){
+  const h = DB.holds.find(x=>x.id===id); if(!h) return;
+  const it = item(h.item);
+  const due = h.to;
+  DB.loans.push({ id:'L'+Date.now(), item:h.item, unit:h.unit, name:h.name, roll:h.roll, club:h.club,
+                  phone:h.phone, purpose:h.purpose, out:today(), due, deposit:it.deposit, returned:null });
+  h.status = 'fulfilled';
+  logit(`Reservation for ${h.unit} picked up by ${h.name}, due ${pretty(due)}`);
+  toast(`${h.unit} handed to ${h.name}`); render();
+}
+
+/* =====================================================================
+   6. Register — the thing the paper book was supposed to be
+   ===================================================================== */
+function viewLedger(){
+  const done = DB.loans.filter(l=>l.returned).sort((a,b)=>b.returned.localeCompare(a.returned));
+  const fees = done.reduce((n,l)=>n+(l.fee||0),0);
+  const lateOnes = done.filter(l=>l.lateDays>0).length;
+  return `
+  <div class="head">
+    <h1>Register</h1>
+    <p>Closed loans and everything the desk has done, kept in order without anyone writing it down.</p>
+  </div>
+  <div class="grid2">
+    <div class="stat"><b class="num">${done.length}</b><span>loans closed</span></div>
+    <div class="stat"><b class="num">${lateOnes}</b><span>came back late</span></div>
+    <div class="stat"><b class="num">${money(fees)}</b><span>late fees collected</span></div>
+  </div>
+  <div class="sec-title"><h2>Closed loans</h2></div>
+  <div class="card">
+    ${done.length ? `<div class="wrap"><table>
+      <thead><tr><th>Unit</th><th>Borrower</th><th>Out</th><th>Back</th><th>Fee</th><th>Refunded</th><th>Condition</th></tr></thead>
+      <tbody>${done.map(l=>`<tr>
+        <td><span class="code">${l.unit}</span></td>
+        <td>${esc(l.name)}<div class="meta">${esc(l.roll)}</div></td>
+        <td class="num">${pretty(l.out)}</td>
+        <td class="num">${pretty(l.returned)}${l.lateDays?`<div class="meta" style="color:var(--late)">${l.lateDays} late</div>`:''}</td>
+        <td class="num">${money(l.fee||0)}</td>
+        <td class="num">${money(l.refund||0)}</td>
+        <td>${esc(l.condition||'—')}${l.note?`<div class="meta">${esc(l.note)}</div>`:''}</td>
+      </tr>`).join('')}</tbody></table></div>`
+      : `<div class="empty"><b>Nothing closed yet.</b>Returns land here with their fee and refund.</div>`}
+  </div>
+  <div class="sec-title"><h2>Desk activity</h2><span>newest first</span></div>
+  <div class="card"><div class="rows">
+    ${DB.log.map(e=>`<div class="line"><span>${esc(e.text)}</span>
+      <span class="meta num">${new Date(e.at).toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span></div>`).join('')}
+  </div></div>`;
+}
+
+/* =====================================================================
+   7. Desk rules
+   ===================================================================== */
+function viewRules(){
+  const s = DB.settings;
+  return `
+  <div class="head">
+    <h1>Desk rules</h1>
+    <p>Change how the desk behaves. Every rule here is enforced on the hand-out screen.</p>
+  </div>
+  <div class="card">
+    <div class="grid2">
+      <div class="field"><label for="sDesk">Room name</label><input id="sDesk" value="${esc(s.desk)}"></div>
+      <div class="field"><label for="sMax">Items one person may hold</label><input type="number" id="sMax" min="1" max="10" value="${s.maxItems}"></div>
+      <div class="field"><label for="sGrace">Grace days before a late fee</label><input type="number" id="sGrace" min="0" max="7" value="${s.graceDays}"></div>
+      <div class="field"><label for="sDef">Default loan length in days</label><input type="number" id="sDef" min="1" max="14" value="${s.defaultDays}"></div>
+    </div>
+    <div class="note" style="margin-top:14px">The limit stops one club booking out half the room: reservations count towards it too, and nobody gets two of the same item.</div>
+  </div>
+  <div class="sec-title"><h2>Gear and charges</h2><span>deposit and late fee per item</span></div>
+  <div class="card"><div class="wrap"><table>
+    <thead><tr><th>Item</th><th>Units</th><th>Deposit</th><th>Late fee a day</th><th>Longest loan</th></tr></thead>
+    <tbody>${DB.items.map(i=>`<tr>
+      <td>${esc(i.name)}<div class="meta">${esc(i.category)}</div></td>
+      <td class="num">${i.units.filter(u=>!u.retired).length}</td>
+      <td><input type="number" data-fee="${i.id}" data-k="deposit" value="${i.deposit}" style="width:100px;background:var(--paper);border:1px solid var(--edge);border-radius:6px;padding:6px 8px"></td>
+      <td><input type="number" data-fee="${i.id}" data-k="lateFeePerDay" value="${i.lateFeePerDay}" style="width:90px;background:var(--paper);border:1px solid var(--edge);border-radius:6px;padding:6px 8px"></td>
+      <td><input type="number" data-fee="${i.id}" data-k="maxDays" value="${i.maxDays}" style="width:70px;background:var(--paper);border:1px solid var(--edge);border-radius:6px;padding:6px 8px"></td>
+    </tr>`).join('')}</tbody>
+  </table></div></div>
+  <div class="card">
+    <h3>Export the register</h3>
+    <p class="meta" style="margin-bottom:12px">Take a CSV of every loan for the department file.</p>
+    <button class="btn ghost" id="csv">Download loans as CSV</button>
+  </div>`;
+}
+
+/* ---------- nudge writer ---------- */
+function nudge(id){
+  const l = DB.loans.find(x=>x.id===id); if(!l) return;
+  const it = item(l.item), d = lateDays(l), fee = feeFor(l);
+  const msg = d > 0
+    ? `Hi ${l.name.split(' ')[0]}, the ${it.name} (${l.unit}) from the AV room was due back on ${pretty(l.due)} — that's ${d} day${d>1?'s':''} ago. The late fee is at ${money(fee)} and grows by ${money(it.lateFeePerDay)} each day, taken out of your ${money(l.deposit)} deposit. Please drop it at ${DB.settings.desk} today. Someone else is waiting on it.`
+    : `Hi ${l.name.split(' ')[0]}, a reminder that the ${it.name} (${l.unit}) is due back at ${DB.settings.desk} on ${pretty(l.due)}. Return it on time and your full ${money(l.deposit)} deposit comes back.`;
+  const v = modal(`
+    <h2>${d>0?'Chase this one up':'Friendly reminder'}</h2>
+    <p class="meta">${esc(l.name)}${l.phone?' · '+esc(l.phone):''}${l.club?' · '+esc(l.club):''}</p>
+    <div class="field" style="margin-top:14px"><textarea id="msg" style="min-height:150px">${esc(msg)}</textarea></div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" id="copy">Copy message</button>
+      <button class="btn ghost" data-close>Close</button>
+    </div>`);
+  v.querySelector('#copy').onclick = async () => {
+    const text = v.querySelector('#msg').value;
+    try{ await navigator.clipboard.writeText(text); toast('Message copied'); }
+    catch(e){ v.querySelector('#msg').select(); document.execCommand('copy'); toast('Message copied'); }
+    logit(`Reminder sent to ${l.name} about ${l.unit}`); v.remove(); render();
+  };
+  v.querySelector('[data-close]').onclick = () => v.remove();
+}
+
+function csv(){
+  const rows = [['unit','item','borrower','roll','club','out','due','returned','days_late','late_fee','deposit','refunded','condition']];
+  DB.loans.forEach(l => rows.push([l.unit, item(l.item).name, l.name, l.roll, l.club||'', l.out, l.due,
+    l.returned||'', l.lateDays||0, l.fee||0, l.deposit, l.refund??'', l.condition||'']));
+  const blob = new Blob([rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `av-room-register-${today()}.csv`; a.click();
+  URL.revokeObjectURL(a.href); toast('Register exported');
+}
+
+/* ---------- events ---------- */
+function wire(){
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+  document.querySelectorAll('[data-take]').forEach(b => b.onclick = () => takeBack(b.dataset.take));
+  document.querySelectorAll('[data-nudge]').forEach(b => b.onclick = () => nudge(b.dataset.nudge));
+  document.querySelectorAll('[data-fulfil]').forEach(b => b.onclick = () => fulfil(b.dataset.fulfil));
+  document.querySelectorAll('[data-drop]').forEach(b => b.onclick = () => {
+    const h = DB.holds.find(x=>x.id===b.dataset.drop);
+    h.status='cancelled'; logit(`Reservation for ${h.unit} cancelled`); toast('Reservation cancelled'); render();
+  });
+
+  // desk
+  const qi = document.getElementById('qItem');
+  if(qi){
+    qi.onchange = e => { q.item = e.target.value; render(); };
+    document.getElementById('qFrom').onchange = e => { q.from = e.target.value; if(q.to < q.from) q.to = q.from; render(); };
+    document.getElementById('qTo').onchange = e => { q.to = e.target.value; render(); };
+    document.querySelectorAll('[data-range]').forEach(c => c.onclick = () => {
+      const r = c.dataset.range;
+      if(r==='today'){ q.from = q.to = today(); }
+      if(r==='tom'){ q.from = q.to = addDays(today(),1); }
+      if(r==='weekend'){ const [s,e] = nextWeekend(); q.from = s; q.to = e; }
+      if(r==='week'){ q.from = today(); q.to = addDays(today(),6); }
+      render();
+    });
+  }
+
+  // issue
+  const fi = document.getElementById('fItem');
+  if(fi){
+    fi.onchange = e => { form.item = e.target.value; form.days = null; form.unit=''; render(); };
+    document.getElementById('fFrom').onchange = e => { form.from = e.target.value; render(); };
+    document.getElementById('fDays').onchange = e => { form.days = Math.max(1, +e.target.value||1); render(); };
+    document.getElementById('fUnit').onchange = e => { form.unit = e.target.value; };
+    const bind = (id,k) => { const n = document.getElementById(id); n.oninput = e => { form[k] = e.target.value; }; 
+      n.onblur = () => { if(k==='roll') render(); }; };
+    bind('fName','name'); bind('fRoll','roll'); bind('fClub','club'); bind('fPhone','phone'); bind('fPurpose','purpose');
+    document.getElementById('fName').oninput = e => { form.name = e.target.value; 
+      document.getElementById('doIssue').disabled = !(form.name.trim() && form.roll.trim()) || borrowChecks(item(form.item), form.roll, form.from, addDays(form.from,(form.days||DB.settings.defaultDays)-1)).problems.length>0; };
+    document.getElementById('doIssue').onclick = () => doIssue(false);
+    document.getElementById('doHold').onclick = () => doIssue(true);
+  }
+
+  // rules
+  const sd = document.getElementById('sDesk');
+  if(sd){
+    const s = DB.settings;
+    sd.onchange = e => { s.desk = e.target.value; render(); };
+    document.getElementById('sMax').onchange = e => { s.maxItems = Math.max(1,+e.target.value||1); render(); };
+    document.getElementById('sGrace').onchange = e => { s.graceDays = Math.max(0,+e.target.value||0); render(); };
+    document.getElementById('sDef').onchange = e => { s.defaultDays = Math.max(1,+e.target.value||1); render(); };
+    document.querySelectorAll('[data-fee]').forEach(inp => inp.onchange = e => {
+      item(e.target.dataset.fee)[e.target.dataset.k] = Math.max(0, +e.target.value||0);
+      logit('Charges updated'); render();
+    });
+    document.getElementById('csv').onclick = csv;
+  }
+}
+
+document.getElementById('themeBtn').onclick = function(){
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  this.textContent = dark ? 'Switch to dark' : 'Switch to light';
+  try{ localStorage.setItem(KEY+'.theme', dark ? 'light' : 'dark'); }catch(e){}
+};
+document.getElementById('resetBtn').onclick = () => {
+  if(confirm('Clear the register and load the demo gear again?')){ DB = seed(); save(); go('desk'); toast('Demo data restored'); }
+};
+
+try{ const th = localStorage.getItem(KEY+'.theme');
+  if(th){ document.documentElement.setAttribute('data-theme', th);
+    document.getElementById('themeBtn').textContent = th==='dark' ? 'Switch to light' : 'Switch to dark'; } }catch(e){}
+
+load(); render();
+</script>
+</body>
+</html>
